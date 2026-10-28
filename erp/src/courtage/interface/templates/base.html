@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block titre %}{{ titre_application }}{% endblock %}</title>
+    <link rel="stylesheet" href="/statiques/courtage.css" />
+  </head>
+  <body>
+    <header class="bandeau">
+      <span class="marque">{{ titre_application }}</span>
+      <span class="cabinet">{{ nom_cabinet }}, courtier grossiste délégataire</span>
+      <nav>
+        <a href="/" class="{{ 'actif' if page_active == 'accueil' }}">Accueil</a>
+        <a href="/adherents" class="{{ 'actif' if page_active == 'adherents' }}">Adhérents</a>
+        <a href="/contrats" class="{{ 'actif' if page_active == 'contrats' }}">Portefeuille</a>
+        <a href="/contrats/nouveau" class="{{ 'actif' if page_active == 'saisie' }}">Saisir un contrat</a>
+        <a href="/anomalies" class="{{ 'actif' if page_active == 'anomalies' }}">Anomalies</a>
+        <a href="/dossiers-a-valider" class="{{ 'actif' if page_active == 'validation' }}">À valider</a>
+        <a href="/reseau" class="{{ 'actif' if page_active == 'reseau' }}">Réseau</a>
+        <a href="/api/doc">API</a>
+      </nav>
+    </header>
+    {% if mode_demonstration %}
+      <div class="message information" style="margin: 0; border-radius: 0; text-align: center">
+        Démonstration en ligne : portefeuille entièrement fictif, ouvert à tous et remis à zéro à chaque
+        redémarrage. Vous pouvez saisir un contrat ou valider un dossier sans crainte.
+      </div>
+    {% endif %}
+    <main>{% block contenu %}{% endblock %}</main>
+    <footer>
+      Données entièrement synthétiques, générées de façon déterministe. Les taux et tarifs sont des
+      hypothèses de simulation, listées dans <code>docs/HYPOTHESES.md</code>. Aucun barème légal n'est
+      reproduit.
+    </footer>
+  </body>
+</html>

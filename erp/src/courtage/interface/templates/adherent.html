@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block titre %}{{ adherent.nom }} {{ adherent.prenom }}, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  <h1>{{ adherent.nom }} {{ adherent.prenom }}</h1>
+  <p class="sous-titre">
+    Adhérent <span class="reference">{{ adherent.numero_adherent }}</span>
+    {% if entreprise %}, salarie de {{ entreprise }}{% else %}, contrat individuel{% endif %}
+  </p>
+
+  <div class="colonnes">
+    <section class="carte">
+      <h2 style="margin-top: 0">Identité</h2>
+      <dl class="proprietes">
+        <dt>Numéro</dt><dd class="reference">{{ adherent.numero_adherent }}</dd>
+        <dt>Naissance</dt><dd>{{ adherent.date_naissance.strftime('%d/%m/%Y') }} ({{ age }} ans)</dd>
+        <dt>Sexe</dt><dd>{{ adherent.sexe }}</dd>
+        <dt>Code postal</dt><dd>{{ adherent.code_postal }} ({{ adherent.departement }})</dd>
+        <dt>Courriel</dt><dd>{{ adherent.courriel or "-" }}</dd>
+        <dt>Téléphone</dt><dd>{{ adherent.telephone or "-" }}</dd>
+        <dt>Entreprise</dt><dd>{{ entreprise or "aucune, contrat individuel" }}</dd>
+        <dt>Créé le</dt><dd>{{ adherent.date_creation.strftime('%d/%m/%Y') }}</dd>
+      </dl>
+    </section>
+
+    <section class="carte">
+      <h2 style="margin-top: 0">Score de résiliation</h2>
+      {% for numero_contrat, score in scores %}
+        <div class="score-resiliation">
+          <p style="margin: 0">
+            <span class="reference">{{ numero_contrat }}</span> :
+            <strong>{{ "%.0f" | format(score.probabilite * 100) }} %</strong> de risque de résiliation à douze mois,
+            décile {{ score.decile }} sur 10
+            {% if score.decile == 10 %}<span class="pastille suspendu">à contacter</span>{% endif %}
+          </p>
+          {% if score.facteur_1 %}
+            <ul class="discret" style="margin: 4px 0 10px">
+              {% for facteur in [score.facteur_1, score.facteur_2, score.facteur_3] if facteur %}
+                <li>{{ facteur }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% else %}
+        <p class="sous-titre" style="margin: 0">Aucun contrat de cet adhérent n'a encore été scoré.</p>
+      {% endfor %}
+      {% if scores %}
+        <p class="discret" style="margin: 0">
+          Score du {{ scores[0][1].date_observation.strftime('%d/%m/%Y') }}, modèle {{ scores[0][1].version_modele }}.
+          Les facteurs sont ceux qui poussent le risque à la hausse pour ce contrat. Données synthétiques.
+        </p>
+      {% endif %}
+    </section>
+  </div>
+
+  <h2>Contrats</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Contrat</th><th>Produit</th><th>Branche</th><th>Formule</th>
+          <th>Statut</th><th>Effet</th><th>Résiliation</th><th class="nombre">Cotisation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contrat in contrats %}
+          <tr>
+            <td class="reference"><a href="/contrats/{{ contrat.numero_contrat }}">{{ contrat.numero_contrat }}</a></td>
+            <td>{{ contrat.libelle_produit }}<div class="discret reference">{{ contrat.code_produit }}</div></td>
+            <td>{{ contrat.branche }}</td>
+            <td class="reference">{{ contrat.code_formule }}</td>
+            <td><span class="pastille {{ contrat.statut.value }}">{{ contrat.statut | libelle }}</span></td>
+            <td class="reference">{{ contrat.date_effet.strftime('%d/%m/%Y') if contrat.date_effet else "-" }}</td>
+            <td class="reference">
+              {% if contrat.date_resiliation %}
+                {{ contrat.date_resiliation.strftime('%d/%m/%Y') }}
+                <div class="discret">{{ contrat.motif_resiliation | libelle }}</div>
+              {% else %}-{% endif %}
+            </td>
+            <td class="nombre">{{ contrat.cotisation_mensuelle_affichee }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="vide">Cet adhérent n'a aucun contrat.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p><a class="bouton secondaire" href="/contrats/nouveau?numero_adherent={{ adherent.numero_adherent }}">Saisir un contrat pour cet adhérent</a></p>
+{% endblock %}

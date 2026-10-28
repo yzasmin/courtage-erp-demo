@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block titre %}Portefeuille, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  {% from "_pagination.html" import pagination %}
+  <h1>Portefeuille</h1>
+  <p class="sous-titre">
+    Un devis n'est pas au portefeuille : il n'a pas pris effet. Un contrat suspendu y reste, ses
+    garanties seules sont suspendues.
+  </p>
+
+  <form method="get" action="/contrats" class="barre-outils">
+    <div class="champ">
+      <label for="statut">Statut</label>
+      <select id="statut" name="statut">
+        <option value="">Tous</option>
+        {% for valeur in statuts %}
+          <option value="{{ valeur }}" {{ 'selected' if valeur == statut }}>{{ valeur | libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="champ">
+      <label for="code_produit">Produit</label>
+      <select id="code_produit" name="code_produit">
+        <option value="">Tous</option>
+        {% for produit in produits %}
+          <option value="{{ produit.code }}" {{ 'selected' if produit.code == code_produit }}>{{ produit.code }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="champ">
+      <label for="code_apporteur">Apporteur</label>
+      <select id="code_apporteur" name="code_apporteur">
+        <option value="">Tous</option>
+        {% for apporteur in apporteurs %}
+          <option value="{{ apporteur.code }}" {{ 'selected' if apporteur.code == code_apporteur }}>{{ apporteur.code }} {{ apporteur.nom }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="champ large">
+      <label for="recherche">Numéro de contrat</label>
+      <input type="search" id="recherche" name="recherche" value="{{ recherche or '' }}" placeholder="SI-2025-00123" />
+    </div>
+    <button type="submit">Filtrer</button>
+    <a class="bouton secondaire" href="/contrats">Effacer</a>
+  </form>
+
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Contrat</th><th>Produit</th><th>Formule</th><th>Apporteur</th>
+          <th>Statut</th><th>Effet</th><th>Résiliation</th><th class="nombre">Cotisation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contrat in contrats %}
+          <tr>
+            <td class="reference"><a href="/contrats/{{ contrat.numero_contrat }}">{{ contrat.numero_contrat }}</a></td>
+            <td>{{ contrat.code_produit }}</td>
+            <td class="reference">{{ contrat.code_formule }}</td>
+            <td class="reference">{{ contrat.code_apporteur }}</td>
+            <td><span class="pastille {{ contrat.statut.value }}">{{ contrat.statut | libelle }}</span></td>
+            <td class="reference">{{ contrat.date_effet.strftime('%d/%m/%Y') if contrat.date_effet else "-" }}</td>
+            <td class="reference">
+              {% if contrat.date_resiliation %}{{ contrat.date_resiliation.strftime('%d/%m/%Y') }}
+                <div class="discret">{{ contrat.motif_resiliation | libelle }}</div>
+              {% else %}-{% endif %}
+            </td>
+            <td class="nombre">{{ contrat.cotisation_mensuelle_affichee }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="vide">Aucun contrat ne correspond à ces critères.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(page, pages, total, "/contrats", parametres) }}
+{% endblock %}

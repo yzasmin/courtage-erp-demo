@@ -1,0 +1,11 @@
+{% macro pagination(page, pages, total, base, parametres) %}
+  {% if pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}<a href="{{ base }}?page={{ page - 1 }}{{ parametres }}">Précédente</a>{% endif %}
+      <span>Page {{ page }} sur {{ pages }}, {{ total }} lignes</span>
+      {% if page < pages %}<a href="{{ base }}?page={{ page + 1 }}{{ parametres }}">Suivante</a>{% endif %}
+    </div>
+  {% else %}
+    <div class="pagination"><span>{{ total }} ligne{{ 's' if total > 1 }}</span></div>
+  {% endif %}
+{% endmacro %}

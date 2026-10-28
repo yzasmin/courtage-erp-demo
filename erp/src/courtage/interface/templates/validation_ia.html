@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block titre %}Dossiers à valider, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  <h1>Dossiers pré-remplis à valider</h1>
+  <p class="sous-titre">
+    Documents reçus lus par l'agent ({{ lignes[0].dossier.modele if lignes else "modèle de langage" }}),
+    confrontés au portefeuille, puis déposés ici. Rien n'est écrit dans le portefeuille avant votre décision :
+    valider un remboursement crée la prestation, après une nouvelle vérification de la délégation, de la
+    garantie à la date des soins et du plafond.
+  </p>
+  {% if message %}<div class="message {{ message_type }}">{{ message }}</div>{% endif %}
+
+  {% if not lignes %}
+    <div class="message information">
+      Aucun dossier. Les documents se traitent avec <code>courtage ia traiter</code>.
+    </div>
+  {% else %}
+    <p>{{ a_valider }} dossier(s) à valider sur {{ lignes | length }}.</p>
+  {% endif %}
+
+  {% for ligne in lignes %}
+    {% set d = ligne.dossier %}
+    {% set c = ligne.champs %}
+    <section class="carte">
+      <h2 style="margin-top: 0">
+        <span class="reference">{{ d.nom_fichier }}</span>
+        <span class="pastille {{ 'en_cours' if d.statut.value == 'valide' else ('resilie' if d.statut.value == 'rejete' else 'suspendu') }}">
+          {{ {"a_valider": "à valider", "valide": "validé", "rejete": "rejeté"}[d.statut.value] }}
+        </span>
+      </h2>
+      <div class="colonnes">
+        <dl class="proprietes">
+          <dt>Type</dt><dd>{{ (c.type_document or "non lu") | replace("_", " ") }}</dd>
+          <dt>Émetteur</dt><dd>{{ c.emetteur or "-" }}</dd>
+          <dt>Adhérent lu</dt><dd>{{ c.prenom or "" }} {{ c.nom or "" }} <span class="reference">{{ c.numero_adherent or "" }}</span></dd>
+          <dt>Rapproché de</dt>
+          <dd>
+            {% if ligne.numero_adherent %}<a class="reference" href="/adherents/{{ ligne.numero_adherent }}">{{ ligne.numero_adherent }}</a>{% else %}aucun adhérent{% endif %}
+            {% if d.similarite_nom is not none %}, similarité du nom {{ ("%.2f" | format(d.similarite_nom)) | replace(".", ",") }}{% endif %}
+          </dd>
+          <dt>Contrat</dt>
+          <dd>{% if ligne.numero_contrat %}<a class="reference" href="/contrats/{{ ligne.numero_contrat }}">{{ ligne.numero_contrat }}</a>{% else %}{{ c.numero_contrat or "-" }}{% endif %}</dd>
+          <dt>Date</dt><dd class="reference">{{ c.date_document | date_fr if c.date_document else "-" }}</dd>
+          <dt>Garantie</dt><dd>{{ c.code_garantie or "-" }}</dd>
+          <dt>Total lu</dt><dd>{{ d.montant_total_cents | euros if d.montant_total_cents is not none else "-" }}</dd>
+        </dl>
+        <div>
+          <ul style="margin: 0; padding-left: 18px">
+            {% for controle in ligne.controles %}
+              <li>
+                <span class="pastille {{ {'ok': 'en_cours', 'alerte': 'suspendu', 'bloquant': 'resilie'}[controle.niveau] }}">{{ controle.niveau }}</span>
+                {{ controle.message }}
+              </li>
+            {% endfor %}
+          </ul>
+          <p class="discret" style="margin: 8px 0 0">
+            {{ d.jetons_entree }} jetons lus, {{ d.jetons_sortie }} écrits, {{ ("%.4f" | format(d.cout_microdollars / 1000000)) | replace(".", ",") }} $, {{ d.latence_ms }} ms.
+          </p>
+        </div>
+      </div>
+
+      {% if d.statut.value == "a_valider" %}
+        <form method="post" action="/dossiers-a-valider/{{ d.id }}/decision" class="actions" style="margin-top: 10px">
+          {% if not ligne.bloquant %}
+            <button class="bouton" name="decision" value="valider">Valider{% if c.type_document != "attestation_employeur" %} et créer la prestation{% endif %}</button>
+          {% endif %}
+          <input name="motif" placeholder="Motif du rejet" style="min-width: 260px">
+          <button class="bouton secondaire" name="decision" value="rejeter">Rejeter</button>
+        </form>
+      {% elif d.statut.value == "rejete" %}
+        <p class="discret">Rejeté : {{ d.motif_rejet }}</p>
+      {% elif d.prestation_id %}
+        <p class="discret">Prestation créée à la validation.</p>
+      {% endif %}
+    </section>
+  {% endfor %}
+{% endblock %}

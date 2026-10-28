@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block titre %}Saisir un contrat, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  <h1>Saisir un contrat</h1>
+  <p class="sous-titre">
+    Le contrat est cree <strong>à l'état de devis</strong>. Il ne prend effet et ne se quittance qu'apres
+    mise en vigueur, qui est un acte distinct, depuis la fiche du contrat.
+  </p>
+
+  {% if message %}<div class="message {{ message_type }}">{{ message }}</div>{% endif %}
+
+  <form method="post" action="/contrats/nouveau">
+    <div class="colonnes">
+      <section class="carte">
+        <h2 style="margin-top: 0">Adhérent et produit</h2>
+        <div class="champ">
+          <label for="numero_adherent">Numéro d'adhérent</label>
+          <input type="text" id="numero_adherent" name="numero_adherent" value="{{ saisie.numero_adherent or '' }}"
+                 placeholder="A000123" required />
+          <div class="aide">Numéro exact. La liste des adhérents permet de le retrouver.</div>
+        </div>
+        <div class="champ">
+          <label for="code_produit">Produit</label>
+          <select id="code_produit" name="code_produit" required>
+            {% for produit in produits %}
+              <option value="{{ produit.code }}" {% if produit.code == saisie.code_produit %}selected{% endif %}>
+                {{ produit.code }}, {{ produit.libelle }}
+              </option>
+            {% endfor %}
+          </select>
+          <div class="aide">
+            L'affiliation doit etre deleguee au cabinet par la compagnie du produit, sinon la
+            souscription est refusee.
+          </div>
+        </div>
+        <div class="champ">
+          <label for="code_formule">Formule</label>
+          <select id="code_formule" name="code_formule" required>
+            {% for code in codes_formule %}
+              <option value="{{ code }}" {% if code == saisie.code_formule %}selected{% endif %}>{{ code }}</option>
+            {% endfor %}
+          </select>
+          <div class="aide">La formule doit exister sur le produit choisi.</div>
+        </div>
+      </section>
+
+      <section class="carte">
+        <h2 style="margin-top: 0">Distribution et tarif</h2>
+        <div class="champ">
+          <label for="code_apporteur">Apporteur</label>
+          <select id="code_apporteur" name="code_apporteur" required>
+            {% for apporteur in apporteurs %}
+              <option value="{{ apporteur.code }}" {% if apporteur.code == saisie.code_apporteur %}selected{% endif %}>
+                {{ apporteur.code }}, {{ apporteur.nom }} ({{ apporteur.type_apporteur.value }})
+              </option>
+            {% endfor %}
+          </select>
+          <div class="aide">C'est lui qui percevra la rétrocession sur les commissions de ce contrat.</div>
+        </div>
+        <div class="champ">
+          <label for="date_souscription">Date de souscription</label>
+          <input type="date" id="date_souscription" name="date_souscription"
+                 value="{{ saisie.date_souscription or aujourdhui_iso }}" required />
+        </div>
+        <div class="champ">
+          <label for="cotisation_euros">Cotisation mensuelle, en euros</label>
+          <input type="number" id="cotisation_euros" name="cotisation_euros" step="0.01" min="0"
+                 value="{{ saisie.cotisation_euros or '' }}" placeholder="68,40" required />
+          <div class="aide">
+            Saisie en euros, stockee en centimes entiers. Aucun arrondi flottant n'intervient.
+          </div>
+        </div>
+        <div class="champ">
+          <label for="fractionnement">Fractionnement</label>
+          <select id="fractionnement" name="fractionnement" required>
+            {% for valeur in fractionnements %}
+              <option value="{{ valeur }}" {% if valeur == saisie.fractionnement %}selected{% endif %}>{{ valeur | libelle }}</option>
+            {% endfor %}
+          </select>
+          <div class="aide">Périodicité des appels de cotisation.</div>
+        </div>
+      </section>
+    </div>
+
+    <button type="submit">Créer le devis</button>
+    <a class="bouton secondaire" href="/contrats">Annuler</a>
+  </form>
+{% endblock %}

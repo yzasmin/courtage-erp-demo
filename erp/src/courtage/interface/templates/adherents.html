@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block titre %}Adherents, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  {% from "_pagination.html" import pagination %}
+  <h1>Adhérents</h1>
+  <p class="sous-titre">
+    Recherche par nom, prénom ou numéro d'adhérent. C'est ce dont on dispose quand quelqu'un appelle.
+  </p>
+
+  <form method="get" action="/adherents" class="barre-outils">
+    <div class="champ large">
+      <label for="recherche">Nom, prénom ou numéro</label>
+      <input type="search" id="recherche" name="recherche" value="{{ recherche or '' }}" placeholder="Martin, ou A001234" />
+    </div>
+    <div class="champ">
+      <label for="departement">Département</label>
+      <select id="departement" name="departement">
+        <option value="">Tous</option>
+        {% for code in departements %}
+          <option value="{{ code }}" {{ 'selected' if code == departement }}>{{ code }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit">Rechercher</button>
+    {% if recherche or departement %}<a class="bouton secondaire" href="/adherents">Effacer</a>{% endif %}
+  </form>
+
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Numéro</th><th>Nom</th><th>Prénom</th><th>Naissance</th>
+          <th>Dept</th><th>Entreprise souscriptrice</th><th class="nombre">Contrats</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in adherents %}
+          <tr>
+            <td class="reference"><a href="/adherents/{{ ligne.numero }}">{{ ligne.numero }}</a></td>
+            <td>{{ ligne.nom }}</td>
+            <td>{{ ligne.prenom }}</td>
+            <td class="reference">{{ ligne.naissance }}</td>
+            <td>{{ ligne.departement }}</td>
+            <td>{{ ligne.entreprise or '<span class="discret">individuel</span>' | safe }}</td>
+            <td class="nombre">{{ ligne.contrats }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="vide">Aucun adhérent ne correspond à cette recherche.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {{ pagination(page, pages, total, "/adherents", parametres) }}
+{% endblock %}

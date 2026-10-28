@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block titre %}Contrat {{ contrat.numero_contrat }}, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  <h1>Contrat {{ contrat.numero_contrat }}</h1>
+  <p class="sous-titre">
+    {{ produit.libelle }} ({{ branche.libelle }}), porte par {{ compagnie.raison_sociale }},
+    apporte par {{ apporteur.nom }}
+  </p>
+
+  {% if message %}<div class="message {{ message_type }}">{{ message }}</div>{% endif %}
+
+  <div class="tuiles">
+    <div class="tuile">
+      <div class="valeur">{{ contrat.statut | libelle }}</div>
+      <div class="libelle">Statut courant</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ cotisation }}</div>
+      <div class="libelle">Cotisation mensuelle</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ soldes_appelees }}</div>
+      <div class="libelle">Cotisations appelées</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ soldes_encaissees }}</div>
+      <div class="libelle">Cotisations encaissées</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ soldes_prestations }}</div>
+      <div class="libelle">Prestations réglées</div>
+    </div>
+    <div class="tuile {{ 'alerte' if soldes.nombre_appels_impayes }}">
+      <div class="valeur">{{ soldes.nombre_appels_impayes }}</div>
+      <div class="libelle">Appels impayés</div>
+    </div>
+  </div>
+
+  <div class="colonnes">
+    <section class="carte">
+      <h2 style="margin-top: 0">Contrat</h2>
+      <dl class="proprietes">
+        <dt>Adhérent</dt>
+        <dd><a href="/adherents/{{ adherent.numero_adherent }}">{{ adherent.nom }} {{ adherent.prenom }}</a>
+          <span class="discret reference">{{ adherent.numero_adherent }}</span></dd>
+        <dt>Souscripteur</dt><dd>{{ entreprise or "l'adhérent lui-même" }}</dd>
+        {% if police %}
+          <dt>Police collective</dt>
+          <dd><span class="reference">{{ police.numero_police }}</span>,
+            effet au {{ police.date_effet.strftime('%d/%m/%Y') }},
+            appels {{ police.fractionnement | libelle }}
+            <div class="discret">Ce contrat est une affiliation : la cotisation est appelée auprès de
+              l'entreprise, pas auprès du salarié.</div></dd>
+        {% endif %}
+        <dt>Produit</dt><dd>{{ produit.code }}, {{ produit.libelle }}</dd>
+        <dt>Compagnie</dt><dd>{{ compagnie.raison_sociale }}</dd>
+        <dt>Formule</dt><dd>{{ formule.code }}, {{ formule.libelle }} (niveau {{ formule.niveau }})</dd>
+        <dt>Apporteur</dt><dd>{{ apporteur.code }}, {{ apporteur.nom }}</dd>
+        <dt>Fractionnement</dt><dd>{{ contrat.fractionnement | libelle }}</dd>
+        <dt>Souscrit le</dt><dd>{{ contrat.date_souscription.strftime('%d/%m/%Y') }}</dd>
+        <dt>Date d'effet</dt>
+        <dd>{{ contrat.date_effet.strftime('%d/%m/%Y') if contrat.date_effet else "non mis en vigueur" }}</dd>
+        {% if contrat.date_resiliation %}
+          <dt>Résilié le</dt><dd>{{ contrat.date_resiliation.strftime('%d/%m/%Y') }}</dd>
+          <dt>Motif</dt><dd>{{ contrat.motif_resiliation | libelle }}</dd>
+        {% endif %}
+      </dl>
+    </section>
+
+    <section class="carte">
+      <h2 style="margin-top: 0">État du contrat à une date</h2>
+      <p class="sous-titre">
+        Reconstitution par les avenants. La reponse indique de quel avenant provient la valeur.
+      </p>
+      <form method="get" action="/contrats/{{ contrat.numero_contrat }}" class="barre-outils">
+        <div class="champ">
+          <label for="a_la_date">Date</label>
+          <input type="date" id="a_la_date" name="a_la_date" value="{{ a_la_date }}" required />
+        </div>
+        <button type="submit">Reconstituer</button>
+      </form>
+      {% if etat %}
+        <dl class="proprietes">
+          <dt>Au</dt><dd>{{ etat.a_la_date.strftime('%d/%m/%Y') }}</dd>
+          <dt>Statut</dt><dd><span class="pastille {{ etat.statut.value }}">{{ etat.statut | libelle }}</span></dd>
+          <dt>Au portefeuille</dt><dd>{{ "oui" if etat.est_en_portefeuille else "non" }}</dd>
+          <dt>Formule</dt><dd>{{ etat_formule.code }}, {{ etat_formule.libelle }}</dd>
+          <dt>Apporteur</dt><dd>{{ etat_apporteur.code }}, {{ etat_apporteur.nom }}</dd>
+          <dt>Cotisation</dt><dd>{{ etat_cotisation }}</dd>
+          <dt>Source</dt>
+          <dd>avenant {{ etat.avenant_numero_ordre }}, {{ etat.avenant_type }},
+            effet au {{ etat.avenant_date_effet.strftime('%d/%m/%Y') }}</dd>
+        </dl>
+      {% elif erreur_etat %}
+        <div class="message refus">{{ erreur_etat }}</div>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="carte">
+    <h2 style="margin-top: 0">Délégation de gestion sur ce produit</h2>
+    {% if perimetre.convention_reference %}
+      <p class="sous-titre">
+        Convention <span class="reference">{{ perimetre.convention_reference }}</span>,
+        portee declaree {{ perimetre.portee_declaree }}. Seuls les actes en vert sont autorises ;
+        la portee declaree n'elargit rien par elle-meme.
+      </p>
+      <ul class="actes">
+        {% for libelle in actes_delegues %}<li>{{ libelle }}</li>{% endfor %}
+        {% for libelle in actes_non_delegues %}<li class="absent">{{ libelle }}</li>{% endfor %}
+      </ul>
+    {% else %}
+      <div class="message refus">
+        Aucune convention de delegation en vigueur sur ce produit : aucun acte de gestion n'est autorise.
+      </div>
+    {% endif %}
+  </section>
+
+  <h2>Garanties de la formule {{ formule.code }}</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr><th>Poste</th><th>Famille</th><th>Couverture</th><th class="nombre">Taux</th><th class="nombre">Plafond annuel</th></tr>
+      </thead>
+      <tbody>
+        {% for garantie in garanties %}
+          <tr>
+            <td>{{ garantie.libelle }}<div class="discret reference">{{ garantie.code }}</div></td>
+            <td>{{ garantie.famille }}</td>
+            <td>{{ garantie.libelle_couverture }}</td>
+            <td class="nombre">{{ garantie.taux_remboursement }}</td>
+            <td class="nombre">{{ garantie.plafond_annuel_affiche or "non plafonne" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="discret">
+    Calcul simplifié : le taux s'applique aux frais présentés, plafonnés à ces frais. La base de remboursement
+    de l'assurance maladie et la part du régime obligatoire ne sont pas modélisées (voir les limites du README).
+  </p>
+
+  <h2>Historique des avenants</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th class="nombre">Rang</th><th>Type</th><th>Effet</th><th>Saisi le</th><th>Statut</th>
+          <th>Formule</th><th>Apporteur</th><th class="nombre">Cotisation</th><th>Commentaire</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for avenant in avenants %}
+          <tr>
+            <td class="nombre">{{ avenant.numero_ordre }}</td>
+            <td>{{ avenant.type_avenant | libelle }}</td>
+            <td class="reference">{{ avenant.date_effet.strftime('%d/%m/%Y') }}</td>
+            <td class="reference">{{ avenant.date_saisie.strftime('%d/%m/%Y') }}</td>
+            <td><span class="pastille {{ avenant.statut.value }}">{{ avenant.statut | libelle }}</span></td>
+            <td class="reference">{{ avenant.code_formule }}</td>
+            <td class="reference">{{ avenant.code_apporteur }}</td>
+            <td class="nombre">{{ avenant.cotisation_mensuelle_affichee }}</td>
+            <td class="discret">{{ avenant.commentaire or "-" }}{% if avenant.motif_resiliation %}
+              <div>motif : {{ avenant.motif_resiliation | libelle }}</div>{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="colonnes">
+    <section class="carte">
+      <h2 style="margin-top: 0">Derniers appels de cotisation</h2>
+      {% if police %}<p class="sous-titre">
+        Appels groupés adressés à l'entreprise. Le montant affiché est la part de cet affilié.
+      </p>{% endif %}
+      <table>
+        <thead>
+          <tr><th>Référence</th><th>Période</th><th>Échéance</th><th>Statut</th><th class="nombre">Part du contrat</th></tr>
+        </thead>
+        <tbody>
+          {% for appel in appels %}
+            <tr>
+              <td class="reference">{{ appel.reference }}</td>
+              <td class="reference">{{ appel.periode }}
+                {% if appel.groupe %}<div class="discret">{{ appel.groupe }}</div>{% endif %}</td>
+              <td class="reference">{{ appel.echeance }}</td>
+              <td><span class="pastille {{ appel.statut }}">{{ appel.statut | libelle }}</span></td>
+              <td class="nombre">{{ appel.total }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="vide">Aucun appel de cotisation sur ce contrat.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="carte">
+      <h2 style="margin-top: 0">Dernières prestations</h2>
+      <table>
+        <thead>
+          <tr><th>Référence</th><th>Garantie</th><th>Soins</th><th>Statut</th><th class="nombre">Remboursé</th></tr>
+        </thead>
+        <tbody>
+          {% for prestation in prestations %}
+            <tr>
+              <td class="reference">{{ prestation.reference }}</td>
+              <td>{{ prestation.garantie }}</td>
+              <td class="reference">{{ prestation.date_soins }}</td>
+              <td><span class="pastille {{ prestation.statut }}">{{ prestation.statut | libelle }}</span></td>
+              <td class="nombre">{{ prestation.rembourse }}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="5" class="vide">
+                Aucune prestation.
+                {% if not prestations_deleguees %}
+                  La gestion des prestations n'est pas deleguee au cabinet sur ce produit :
+                  c'est la compagnie qui les regle.
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <h2>Actes de gestion</h2>
+  <section class="carte">
+    {% if contrat.statut.value == 'devis' %}
+      <form method="post" action="/contrats/{{ contrat.numero_contrat }}/mise-en-vigueur" class="barre-outils">
+        <div class="champ"><label for="effet_vigueur">Date d'effet</label>
+          <input type="date" id="effet_vigueur" name="date_effet" value="{{ aujourdhui_iso }}" required /></div>
+        <button type="submit" {% if not affiliation_deleguee %}disabled{% endif %}>Mettre en vigueur</button>
+      </form>
+    {% elif contrat.statut.value in ('en_cours', 'suspendu') %}
+      <form method="post" action="/contrats/{{ contrat.numero_contrat }}/resiliation" class="barre-outils">
+        <div class="champ"><label for="effet_resiliation">Date d'effet</label>
+          <input type="date" id="effet_resiliation" name="date_effet" value="{{ aujourdhui_iso }}" required /></div>
+        <div class="champ"><label for="motif">Motif, obligatoire</label>
+          <select id="motif" name="motif" required>
+            {% for valeur in motifs %}<option value="{{ valeur }}">{{ valeur | libelle }}</option>{% endfor %}
+          </select></div>
+        <button type="submit" {% if not radiation_deleguee %}disabled{% endif %}>Résilier</button>
+      </form>
+    {% else %}
+      <p class="sous-titre" style="margin: 0">
+        Ce contrat est résilié : il n'accepte plus d'avenant. La reprise de l'adhérent se fait par une
+        nouvelle souscription, avec un nouveau numero de contrat.
+      </p>
+    {% endif %}
+    {% if not radiation_deleguee or not affiliation_deleguee %}
+      <div class="message information">
+        Certains actes sont indisponibles parce que la compagnie ne les a pas delegues au cabinet.
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

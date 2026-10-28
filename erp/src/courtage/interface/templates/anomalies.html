@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block titre %}Anomalies, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  <h1>Anomalies de rapprochement</h1>
+  <p class="sous-titre">
+    Ce que la chaîne des flux financiers a refusé, et ce qu'elle n'a pas réussi à solder. Les trois
+    tableaux suivent l'ordre dans lequel un gestionnaire se pose les questions : quels fichiers ai-je
+    refusés et pourquoi, quels appels ne sont pas soldés, quels virements ne se rattachent à rien.
+  </p>
+
+  <div class="tuiles">
+    <div class="tuile {{ 'alerte' if total_lots_rejetes }}">
+      <div class="valeur">{{ total_lots_rejetes }}</div>
+      <div class="libelle">Lots rejetés</div>
+    </div>
+    <div class="tuile {{ 'alerte' if total_ecarts }}">
+      <div class="valeur">{{ total_ecarts }}</div>
+      <div class="libelle">Écarts de rapprochement</div>
+    </div>
+    <div class="tuile {{ 'alerte' if total_non_trouves }}">
+      <div class="valeur">{{ total_non_trouves }}</div>
+      <div class="libelle">Mouvements sans appel</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ montant_ecart }}</div>
+      <div class="libelle">Montant en écart</div>
+    </div>
+  </div>
+
+  {% if chaine_jamais_executee %}
+    <section class="carte">
+      <p class="sous-titre" style="margin: 0">
+        Aucun lot n'a encore été reçu : la chaîne des flux financiers n'a pas tourné sur cette base. Pour
+        la dérouler, déposer les fichiers simulés avec <code>courtage flux generer</code>, puis lancer le
+        graphe <code>courtage_flux_financiers</code> dans Airflow, ou enchaîner les étapes à la main avec
+        <code>courtage flux detecter</code>, <code>archiver</code>, <code>charger</code>,
+        <code>rapprocher</code> et <code>commissions</code>.
+      </p>
+    </section>
+  {% endif %}
+
+  <h2>Lots rejetés par les contrôles bloquants</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Lot</th><th>Fichier</th><th>Flux</th><th>Émetteur</th><th>Période</th>
+          <th class="nombre">Lignes</th><th class="nombre">Anomalies</th><th>Motif du rejet</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lots_rejetes %}
+          <tr>
+            <td class="reference">{{ ligne.reference }}</td>
+            <td class="reference">{{ ligne.fichier }}</td>
+            <td>{{ ligne.flux }}</td>
+            <td>{{ ligne.compagnie }}</td>
+            <td class="reference">{{ ligne.periode }}</td>
+            <td class="nombre">{{ ligne.lignes }}</td>
+            <td class="nombre">{{ ligne.anomalies }}</td>
+            <td>{{ ligne.motif }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8" class="vide">Aucun lot rejeté.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="sous-titre">
+    Un lot rejeté ne laisse aucune ligne dans la couche brute : c'est tout ou rien. Le fichier reste dans
+    le dossier des rejets avec son rapport d'anomalies, qui est la pièce renvoyée à l'émetteur.
+  </p>
+
+  <h2>Écarts de rapprochement</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Référence bancaire</th><th>Appel</th><th>Porteur</th><th>Échéance</th>
+          <th>Statut</th><th>Méthode</th>
+          <th class="nombre">Appelé</th><th class="nombre">Encaissé</th><th class="nombre">Écart</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in ecarts %}
+          <tr>
+            <td class="reference">{{ ligne.reference_bancaire }}</td>
+            <td class="reference">{{ ligne.reference_appel }}</td>
+            <td class="reference">
+              {% if ligne.porteur and ligne.porteur_consultable %}
+                <a href="/contrats/{{ ligne.porteur }}">{{ ligne.porteur }}</a>
+              {% elif ligne.porteur %}
+                {{ ligne.porteur }} (police collective)
+              {% else %}
+                porteur non identifié
+              {% endif %}
+            </td>
+            <td class="reference">{{ ligne.echeance }}</td>
+            <td><span class="pastille {{ ligne.statut }}">{{ ligne.statut | libelle }}</span></td>
+            <td>{{ ligne.methode }}</td>
+            <td class="nombre">{{ ligne.appele }}</td>
+            <td class="nombre">{{ ligne.encaisse }}</td>
+            <td class="nombre">{{ ligne.ecart }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="9" class="vide">Aucun écart de rapprochement.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="sous-titre">
+    Les {{ total_ecarts }} écarts sont triés du plus gros au plus petit ;
+    les {{ ecarts | length }} premiers sont affichés. Un règlement partiel se relance auprès de
+    l'adhérent, un écart s'instruit avec la compagnie.
+  </p>
+
+  <h2>Mouvements bancaires qu'aucun appel ne réclame</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr><th>Référence bancaire</th><th>Date</th><th class="nombre">Montant</th><th>Libellé</th></tr>
+      </thead>
+      <tbody>
+        {% for ligne in non_trouves %}
+          <tr>
+            <td class="reference">{{ ligne.reference_bancaire }}</td>
+            <td class="reference">{{ ligne.date }}</td>
+            <td class="nombre">{{ ligne.montant }}</td>
+            <td>{{ ligne.libelle_bancaire }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="vide">Tous les mouvements encaissés se rattachent à un appel.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Cotisations appelées sans encaissement possible</h2>
+  <section class="carte">
+    <p class="sous-titre" style="margin: 0 0 8px">
+      Ces appels ne sont pas des anomalies. La compagnie n'a pas délégué l'encaissement au cabinet sur ces
+      produits : elle prélève elle-même les cotisations, et aucun mouvement bancaire du cabinet ne peut
+      donc leur correspondre. Les distinguer évite de les faire remonter comme des écarts, ce qui serait
+      l'erreur d'analyse la plus coûteuse de cet écran.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Produit</th><th>Compagnie</th><th class="nombre">Appels émis</th><th class="nombre">Montant appelé</th></tr>
+      </thead>
+      <tbody>
+        {% for ligne in sans_encaissement %}
+          <tr>
+            <td>{{ ligne.produit }}</td>
+            <td>{{ ligne.compagnie }}</td>
+            <td class="nombre">{{ ligne.appels }}</td>
+            <td class="nombre">{{ ligne.montant }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="vide">L'encaissement est délégué au cabinet sur tous les produits.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

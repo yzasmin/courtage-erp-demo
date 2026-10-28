@@ -1,0 +1,84 @@
+[project]
+name = "courtage-erp"
+version = "0.1.0"
+description = "Mini-ERP de courtage sante et prevoyance : coeur contrats, flux financiers orchestres par Airflow et dbt, pilotage, intelligence artificielle metier"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+# Bornes hautes partout : une version majeure ne doit pas entrer sans avoir ete testee.
+dependencies = [
+    "sqlalchemy>=2.0,<3",
+    "alembic>=1.13,<2",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "pydantic>=2.8,<3",
+    "pydantic-settings>=2.4,<3",
+    "jinja2>=3.1,<4",
+    "python-multipart>=0.0.9,<0.1",
+    "psycopg[binary]>=3.2,<4",
+    # Lecture et ecriture des bordereaux au format XLSX recus des compagnies (module 2).
+    "openpyxl>=3.1,<4",
+]
+
+[project.optional-dependencies]
+# Prediction de resiliation (module 5). En option : l'application ERP n'en a pas besoin pour servir, seuls
+# l'entrainement et la tache de scoring du graphe Airflow l'installent. Pas de paquet `shap` : LightGBM
+# calcule lui-meme les valeurs SHAP exactes de ses arbres (`pred_contrib`), sans numba ni llvmlite.
+ml = [
+    "scikit-learn>=1.5,<2",
+    "lightgbm>=4.3,<5",
+    "pandas>=2.2,<3",
+]
+
+# Agent de pre-remplissage (module 4a) : appel du modele de langage, fabrication des PDF de demonstration
+# et lecture de leur texte. En option, comme `ml` : seule la commande `courtage ia` en a besoin.
+ia = [
+    "anthropic>=0.70",
+    "fpdf2>=2.7,<3",
+    "pypdf>=4.2",
+]
+
+[dependency-groups]
+# dbt est isole dans son propre groupe : il tire une cinquantaine de dependances dont l application
+# ERP n a aucun besoin, et seul le module 2 l utilise.
+dbt = [
+    "dbt-core>=1.8,<2",
+    "dbt-postgres>=1.8,<2",
+]
+dev = [
+    "pytest>=8,<9",
+    "httpx>=0.27,<1",
+    "ruff>=0.6,<0.13",
+]
+
+[project.scripts]
+courtage = "courtage.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/courtage"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+# Regles fixees explicitement pour que la CI et le poste local donnent le meme verdict.
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "RUF"]
+# RUF001 a 003 : les textes du projet sont en francais, les caracteres accentues
+# et les espaces insecables des libelles metier ne sont pas des erreurs.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]
+"migrations/versions/*" = ["E501"]
+# Generateurs de fichiers de configuration et requetes SQL : des lignes longues y sont plus lisibles coupees.
+"scripts/construire_pbip.py" = ["E501"]
+"scripts/concordance_kpi.py" = ["E501"]

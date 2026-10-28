@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block titre %}Accueil, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  <h1>Portefeuille du cabinet</h1>
+  <p class="sous-titre">
+    Situation au {{ fin_historique }}, date à laquelle s'arrête l'historique simulé. Tous les
+    compteurs sont lus en base, aucun n'est écrit en dur.
+  </p>
+
+  <div class="tuiles">
+    <div class="tuile">
+      <div class="valeur">{{ synthese.contrats_en_portefeuille }}</div>
+      <div class="libelle">Contrats en portefeuille</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ cotisation_annualisee }}</div>
+      <div class="libelle">Cotisation annualisée</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ synthese.adherents }}</div>
+      <div class="libelle">Adhérents</div>
+    </div>
+    <div class="tuile">
+      <div class="valeur">{{ synthese.devis_en_attente }}</div>
+      <div class="libelle">Devis en attente</div>
+    </div>
+    <div class="tuile {{ 'alerte' if synthese.contrats_suspendus }}">
+      <div class="valeur">{{ synthese.contrats_suspendus }}</div>
+      <div class="libelle">Garanties suspendues</div>
+    </div>
+    <div class="tuile {{ 'alerte' if synthese.appels_impayes }}">
+      <div class="valeur">{{ synthese.appels_impayes }}</div>
+      <div class="libelle">Appels impayés</div>
+    </div>
+  </div>
+
+  <div class="colonnes">
+    <section class="carte">
+      <h2 style="margin-top: 0">Portefeuille par branche</h2>
+      <table>
+        <thead>
+          <tr><th>Branche</th><th class="nombre">En cours</th><th class="nombre">Cotisation annualisée</th></tr>
+        </thead>
+        <tbody>
+          {% for ligne in par_branche %}
+            <tr>
+              <td>{{ ligne.libelle }}</td>
+              <td class="nombre">{{ ligne.contrats }}</td>
+              <td class="nombre">{{ ligne.cotisation }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="carte">
+      <h2 style="margin-top: 0">Délégation de gestion par compagnie</h2>
+      <p class="sous-titre">
+        Ce que chaque compagnie a délégué au cabinet. L'ERP refuse tout acte absent de cette liste.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Compagnie</th><th>Portée déclarée</th><th>Actes délégués</th></tr>
+        </thead>
+        <tbody>
+          {% for convention in conventions %}
+            <tr>
+              <td>{{ convention.compagnie }}<div class="discret reference">{{ convention.reference }}</div>
+                {% if convention.echue %}<div class="pastille resilie">échue le {{ convention.jusqu_au }}</div>{% endif %}</td>
+              <td><span class="pastille {{ 'en_cours' if convention.portee == 'totale' else 'suspendu' }}">{{ convention.portee | libelle }}</span></td>
+              <td>
+                <ul class="actes">
+                  {% for acte in convention.actes %}<li>{{ acte }}</li>{% endfor %}
+                  {% for acte in convention.actes_absents %}<li class="absent">{{ acte }}</li>{% endfor %}
+                </ul>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <h2>Derniers mouvements de portefeuille</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Contrat</th><th>Adhérent</th><th>Produit</th><th>Statut</th>
+          <th>Date d'effet</th><th class="nombre">Cotisation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in derniers_contrats %}
+          <tr>
+            <td class="reference"><a href="/contrats/{{ ligne.numero }}">{{ ligne.numero }}</a></td>
+            <td>{{ ligne.adherent }}</td>
+            <td>{{ ligne.produit }}</td>
+            <td><span class="pastille {{ ligne.statut }}">{{ ligne.statut | libelle }}</span></td>
+            <td class="reference">{{ ligne.date_effet or "-" }}</td>
+            <td class="nombre">{{ ligne.cotisation }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

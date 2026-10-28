@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titre %}Reseau, {{ titre_application }}{% endblock %}
+{% block contenu %}
+  <h1>Réseau de distribution et délégations</h1>
+  <p class="sous-titre">
+    Les apporteurs qui alimentent le portefeuille, et ce que chaque compagnie a délégué au cabinet.
+  </p>
+
+  <h2>Apporteurs</h2>
+  <div class="carte" style="padding: 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th><th>Nom</th><th>Qualité</th><th>ORIAS</th><th>Dept</th>
+          <th class="nombre">Contrats au portefeuille</th><th class="nombre">Cotisation annualisée</th>
+          <th class="nombre">Rétrocession cadre</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in apporteurs %}
+          <tr>
+            <td class="reference"><a href="/contrats?code_apporteur={{ ligne.code }}">{{ ligne.code }}</a></td>
+            <td>{{ ligne.nom }}</td>
+            <td>{{ ligne.type_apporteur | libelle }}</td>
+            <td class="reference">{{ ligne.numero_orias or "-" }}</td>
+            <td>{{ ligne.departement }}</td>
+            <td class="nombre">{{ ligne.contrats_en_portefeuille }}</td>
+            <td class="nombre">{{ ligne.cotisation_annualisee_affichee }}</td>
+            <td class="nombre">{{ ligne.taux_retrocession_cadre or "-" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="sous-titre">
+    La production directe du cabinet ne donne lieu à aucune rétrocession : l'affaire arrive sans
+    intermédiaire, il n'y a donc personne à rémunérer. C'est pourquoi son taux cadre est nul.
+  </p>
+
+  <h2>Conventions de délégation de gestion</h2>
+  <p class="sous-titre">
+    Le cabinet est courtier <strong>délégataire</strong> : il accomplit au nom de la compagnie les actes
+    qu'elle lui a délégués. Un acte absent de la convention est refusé par l'ERP, y compris par l'API.
+  </p>
+  {% for convention in conventions %}
+    <section class="carte">
+      <h2 style="margin-top: 0">
+        {{ convention.compagnie }}
+        <span class="pastille {{ 'en_cours' if convention.portee == 'totale' else 'suspendu' }}">
+          {{ convention.portee | libelle }}
+        </span>
+      </h2>
+      <dl class="proprietes">
+        <dt>Convention</dt><dd class="reference">{{ convention.reference }}</dd>
+        <dt>En vigueur depuis</dt><dd>{{ convention.depuis }}</dd>
+        {% if convention.jusqu_au %}
+          <dt>Jusqu'au</dt>
+          <dd>{{ convention.jusqu_au }}
+            {% if convention.echue %}<span class="pastille resilie">échue, non renouvelée</span>
+              <div class="discret">Depuis cette date, aucun acte de gestion n'est délégué au cabinet
+                sur les produits couverts : toute saisie est refusée.</div>{% endif %}</dd>
+        {% endif %}
+        <dt>Produits couverts</dt><dd>{{ convention.produits | join(", ") }}</dd>
+      </dl>
+      <p style="margin: 10px 0 4px; font-size: 12px; color: #8a95a3">ACTES DÉLÉGUÉS</p>
+      <ul class="actes">
+        {% for libelle in convention.actes %}<li>{{ libelle }}</li>{% endfor %}
+        {% for libelle in convention.actes_absents %}<li class="absent">{{ libelle }}</li>{% endfor %}
+      </ul>
+    </section>
+  {% endfor %}
+{% endblock %}

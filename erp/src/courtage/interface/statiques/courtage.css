@@ -1,0 +1,433 @@
+/* Feuille de style de l'interface de gestion.
+   Outil de travail, pas vitrine : densite, lisibilite, alignement des chiffres.
+   Les couleurs sont declarees en variables pour que les pastilles de statut restent coherentes
+   d'un ecran a l'autre. */
+
+:root {
+  --encre: #15191f;
+  --encre-douce: #525c6a;
+  --encre-tres-douce: #8a95a3;
+  --fond: #f6f7f9;
+  --fond-carte: #ffffff;
+  --bordure: #dde1e7;
+  --bordure-forte: #c3cad3;
+  --accent: #1f5f8b;
+  --accent-fond: #e8f1f7;
+
+  --vert: #1d7a4c;
+  --vert-fond: #e6f4ec;
+  --ambre: #8a5a00;
+  --ambre-fond: #fdf1dc;
+  --rouge: #a32920;
+  --rouge-fond: #fbeae8;
+  --gris: #5a6472;
+  --gris-fond: #eceef1;
+
+  --police: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --police-chiffres: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--police);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--encre);
+  background: var(--fond);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* --- Ossature ------------------------------------------------------------- */
+
+.bandeau {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  padding: 10px 20px;
+  background: var(--encre);
+  color: #f3f5f7;
+  flex-wrap: wrap;
+}
+.bandeau .marque {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.bandeau .cabinet {
+  color: #9aa6b4;
+  font-size: 12px;
+}
+.bandeau nav {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.bandeau nav a {
+  color: #cfd6de;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.bandeau nav a:hover {
+  background: #2a313a;
+  text-decoration: none;
+}
+.bandeau nav a.actif {
+  background: var(--accent);
+  color: #fff;
+}
+
+main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 16px 48px;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+h2 {
+  font-size: 15px;
+  margin: 24px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--bordure);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--encre-douce);
+}
+.sous-titre {
+  color: var(--encre-douce);
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+.carte {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.colonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+/* --- Tuiles de synthese --------------------------------------------------- */
+
+.tuiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.tuile {
+  background: var(--fond-carte);
+  border: 1px solid var(--bordure);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+.tuile .valeur {
+  font-family: var(--police-chiffres);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.tuile .libelle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--encre-tres-douce);
+  margin-top: 2px;
+}
+.tuile.alerte .valeur {
+  color: var(--rouge);
+}
+
+/* --- Tableaux ------------------------------------------------------------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--encre-tres-douce);
+  font-weight: 600;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--bordure-forte);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--bordure);
+  vertical-align: top;
+}
+tbody tr:hover {
+  background: #fbfcfd;
+}
+.nombre {
+  font-family: var(--police-chiffres);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.reference {
+  font-family: var(--police-chiffres);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.discret {
+  color: var(--encre-tres-douce);
+}
+.vide {
+  padding: 24px 8px;
+  text-align: center;
+  color: var(--encre-tres-douce);
+}
+
+/* --- Pastilles de statut -------------------------------------------------- */
+
+.pastille {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pastille.en_cours,
+.pastille.reglee,
+.pastille.encaisse,
+.pastille.rapproche {
+  background: var(--vert-fond);
+  color: var(--vert);
+}
+.pastille.devis,
+.pastille.attendu,
+.pastille.non_rapproche {
+  background: var(--gris-fond);
+  color: var(--gris);
+}
+.pastille.suspendu,
+.pastille.partiel,
+.pastille.ecart {
+  background: var(--ambre-fond);
+  color: var(--ambre);
+}
+.pastille.resilie,
+.pastille.impaye,
+.pastille.rejetee,
+.pastille.non_trouve {
+  background: var(--rouge-fond);
+  color: var(--rouge);
+}
+
+/* --- Listes de proprietes ------------------------------------------------- */
+
+dl.proprietes {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+dl.proprietes dt {
+  color: var(--encre-tres-douce);
+  white-space: nowrap;
+}
+dl.proprietes dd {
+  margin: 0;
+}
+
+/* --- Formulaires ---------------------------------------------------------- */
+
+form .champ {
+  margin-bottom: 10px;
+}
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--encre-douce);
+  margin-bottom: 2px;
+}
+input[type="text"],
+input[type="date"],
+input[type="number"],
+input[type="search"],
+select {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--bordure-forte);
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 13px;
+  background: #fff;
+  color: var(--encre);
+}
+input:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+.aide {
+  font-size: 11px;
+  color: var(--encre-tres-douce);
+  margin-top: 2px;
+}
+
+button,
+.bouton {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+button:hover,
+.bouton:hover {
+  background: #184a6d;
+  text-decoration: none;
+}
+button.secondaire,
+.bouton.secondaire {
+  background: #fff;
+  color: var(--accent);
+}
+button.secondaire:hover,
+.bouton.secondaire:hover {
+  background: var(--accent-fond);
+}
+button:disabled,
+.bouton.inactif {
+  border-color: var(--bordure-forte);
+  background: var(--gris-fond);
+  color: var(--encre-tres-douce);
+  cursor: not-allowed;
+}
+
+.barre-outils {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.barre-outils .champ {
+  margin-bottom: 0;
+}
+.barre-outils .champ.large {
+  flex: 1 1 240px;
+}
+
+/* --- Messages ------------------------------------------------------------- */
+
+.message {
+  padding: 9px 12px;
+  border-radius: 3px;
+  border-left: 3px solid;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+.message.succes {
+  background: var(--vert-fond);
+  border-color: var(--vert);
+  color: #14593a;
+}
+.message.refus {
+  background: var(--rouge-fond);
+  border-color: var(--rouge);
+  color: #7d1f18;
+}
+.message.information {
+  background: var(--accent-fond);
+  border-color: var(--accent);
+  color: #15455f;
+}
+
+/* --- Pagination ----------------------------------------------------------- */
+
+.pagination {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--encre-douce);
+}
+.pagination a {
+  padding: 3px 9px;
+  border: 1px solid var(--bordure-forte);
+  border-radius: 3px;
+  background: #fff;
+}
+
+/* --- Delegation ----------------------------------------------------------- */
+
+.actes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.actes li {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--vert-fond);
+  color: var(--vert);
+}
+.actes li.absent {
+  background: var(--gris-fond);
+  color: var(--encre-tres-douce);
+  text-decoration: line-through;
+}
+
+footer {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+  font-size: 12px;
+  color: var(--encre-tres-douce);
+}
+
+@media (max-width: 640px) {
+  main {
+    padding: 14px 12px 36px;
+  }
+  .bandeau {
+    gap: 10px;
+  }
+  .bandeau nav {
+    margin-left: 0;
+    width: 100%;
+  }
+  table {
+    font-size: 12px;
+  }
+}
